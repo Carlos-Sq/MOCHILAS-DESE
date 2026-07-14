@@ -1514,6 +1514,75 @@ if (CONFIG.appsScriptUrl) {
   renderGrid();
 }
 
+/* =============================================================
+   AUTO-SCROLL DEL CARRUSEL DE PRODUCTOS
+   - Desliza el catálogo automáticamente de forma horizontal.
+   - Se pausa si el comprador pasa el mouse, toca, hace scroll manual
+     o abre el modal "Ver modelo", para que pueda elegir con calma.
+   - No modifica renderGrid, filtros, pedido ni WhatsApp: solo mueve
+     el scroll del contenedor #catalogGrid que ya existe.
+   ============================================================= */
+(function () {
+  const track = document.getElementById("catalogGrid");
+  if (!track) return;
+
+  const SPEED = 0.55; // px por frame (ajusta para más/menos velocidad)
+  let paused = false;
+  let resumeTimer = null;
+
+  function pause() {
+    paused = true;
+    clearTimeout(resumeTimer);
+  }
+  function resumeLater(delay) {
+    clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(() => { paused = false; }, delay);
+  }
+
+  function tick() {
+    if (!paused) {
+      const maxScroll = track.scrollWidth - track.clientWidth;
+      if (maxScroll > 1) {
+        // Si llega al final, vuelve suavemente al inicio para seguir el ciclo
+        if (track.scrollLeft >= maxScroll - 1) {
+          track.scrollLeft = 0;
+        } else {
+          track.scrollLeft += SPEED;
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // Pausa al interactuar con el carrusel (mouse, touch, scroll manual)
+  track.addEventListener("mouseenter", pause);
+  track.addEventListener("mouseleave", () => resumeLater(700));
+  track.addEventListener("touchstart", pause, { passive: true });
+  track.addEventListener("touchend", () => resumeLater(2500));
+  track.addEventListener("pointerdown", pause);
+  track.addEventListener("wheel", () => { pause(); resumeLater(2500); }, { passive: true });
+
+  // Pausa mientras el modal "Ver modelo" está abierto; retoma al cerrarlo
+  const overlay = document.getElementById("detailOverlay");
+  if (overlay) {
+    const observer = new MutationObserver(() => {
+      if (overlay.classList.contains("open")) {
+        pause();
+      } else {
+        resumeLater(1200);
+      }
+    });
+    observer.observe(overlay, { attributes: true, attributeFilter: ["class"] });
+  }
+
+  // Respeta preferencia de reducir movimiento
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+
+  requestAnimationFrame(tick);
+})();
+
 /* Animación de entrada del catálogo */
 const catalogSec = document.querySelector(".catalog");
 if ("IntersectionObserver" in window) {
