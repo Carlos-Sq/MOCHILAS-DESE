@@ -416,7 +416,7 @@
     overflow-y:hidden;
     gap:26px;
     padding:6px 6px 22px;
-    scroll-snap-type:x proximity;
+    
     -webkit-overflow-scrolling:touch;
     scrollbar-width:thin;
     scrollbar-color:var(--line-strong) transparent;
@@ -424,7 +424,8 @@
   .grid::-webkit-scrollbar{height:8px;}
   .grid::-webkit-scrollbar-track{background:transparent;}
   .grid::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:999px;}
-  .grid::-webkit-scrollbar-thumb:hover{background:var(--gray-light);}
+  .grid.user-scrolling{scroll-snap-type:x proximity;}
+  .grid.user-scrolling .card{scroll-snap-align:start;}
   .grid > p{
     text-align:center;padding:48px 24px;flex:1 0 100%;
     background:#fff;border:1px dashed var(--line);border-radius:var(--radius);
@@ -438,7 +439,7 @@
     box-shadow:var(--shadow-sm);
     flex:0 0 270px;
     width:270px;
-    scroll-snap-align:start;
+    
   }
   @media(max-width:520px){
     .card{flex-basis:76vw;width:76vw;}
@@ -1532,11 +1533,15 @@ if (CONFIG.appsScriptUrl) {
 
   function pause() {
     paused = true;
+    track.classList.add("user-scrolling");
     clearTimeout(resumeTimer);
   }
   function resumeLater(delay) {
     clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(() => { paused = false; }, delay);
+    resumeTimer = setTimeout(() => {
+      paused = false;
+      track.classList.remove("user-scrolling");
+    }, delay);
   }
 
   function tick() {
